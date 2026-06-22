@@ -250,41 +250,26 @@ const CHEON_EUL_GWI_IN_TABLE: Record<HeavenlyStem, EarthlyBranch[]> = {
 };
 
 /**
- * 도화살 판단 (지지 조합)
+ * 도화살 판단: 연지·일지가 속한 삼합 그룹의 도화지가 사주 내 존재하는지 확인
  */
-function checkDoHwaSal(branches: EarthlyBranch[]): boolean {
+function checkDoHwaSal(
+  yearBranch: EarthlyBranch,
+  dayBranch: EarthlyBranch,
+  branches: EarthlyBranch[],
+): boolean {
   const branchSet = new Set(branches);
 
-  // 인오술 → 묘
-  if (
-    (branchSet.has('인') || branchSet.has('오') || branchSet.has('술')) &&
-    branchSet.has('묘')
-  ) {
-    return true;
-  }
+  const doHwaTable: { group: EarthlyBranch[]; doHwa: EarthlyBranch }[] = [
+    { group: ['인', '오', '술'], doHwa: '묘' },
+    { group: ['사', '유', '축'], doHwa: '오' },
+    { group: ['신', '자', '진'], doHwa: '유' },
+    { group: ['해', '묘', '미'], doHwa: '자' },
+  ];
 
-  // 사유축 → 오
-  if (
-    (branchSet.has('사') || branchSet.has('유') || branchSet.has('축')) &&
-    branchSet.has('오')
-  ) {
-    return true;
-  }
-
-  // 신자진 → 유
-  if (
-    (branchSet.has('신') || branchSet.has('자') || branchSet.has('진')) &&
-    branchSet.has('유')
-  ) {
-    return true;
-  }
-
-  // 해묘미 → 자
-  if (
-    (branchSet.has('해') || branchSet.has('묘') || branchSet.has('미')) &&
-    branchSet.has('자')
-  ) {
-    return true;
+  for (const { group, doHwa } of doHwaTable) {
+    if ((group.includes(yearBranch) || group.includes(dayBranch)) && branchSet.has(doHwa)) {
+      return true;
+    }
   }
 
   return false;
@@ -417,8 +402,8 @@ export function findSinSals(sajuData: SajuData): SinSal[] {
     sinSals.push('cheon_eul_gwi_in');
   }
 
-  // 도화살 체크
-  if (checkDoHwaSal(branches)) {
+  // 도화살 체크 (연지·일지 기준)
+  if (checkDoHwaSal(sajuData.year.branch, dayBranch, branches)) {
     sinSals.push('do_hwa_sal');
   }
 
@@ -454,21 +439,21 @@ export function findSinSals(sajuData: SajuData): SinSal[] {
 }
 
 /**
- * 원진살 체크 - 자오충, 묘유충 등 충돌 관계
+ * 원진살 체크 - 충(沖)과 별개인 원진살 쌍 기준
  */
 function checkWonJinSal(branches: EarthlyBranch[]): boolean {
   const branchSet = new Set(branches);
 
-  const chungPairs: [EarthlyBranch, EarthlyBranch][] = [
-    ['자', '오'],
-    ['축', '미'],
-    ['인', '신'],
-    ['묘', '유'],
-    ['진', '술'],
-    ['사', '해'],
+  const wonJinPairs: [EarthlyBranch, EarthlyBranch][] = [
+    ['자', '미'],
+    ['축', '오'],
+    ['인', '유'],
+    ['묘', '신'],
+    ['진', '해'],
+    ['사', '술'],
   ];
 
-  for (const [b1, b2] of chungPairs) {
+  for (const [b1, b2] of wonJinPairs) {
     if (branchSet.has(b1) && branchSet.has(b2)) {
       return true;
     }
